@@ -1079,13 +1079,28 @@ static void download_one_url(const char *url)
 		}
 
 		if (option_mask32 & WGET_OPT_POST_DATA) {
-			SENDFMT(sfp,
-				"Content-Type: application/x-www-form-urlencoded\r\n"
-				"Content-Length: %u\r\n"
-				"\r\n"
-				"%s",
-				(int) strlen(G.post_data), G.post_data
-			);
+            char *buf=NULL, *data = G.post_data;
+            size_t len = -1;
+
+            if (data[0] == '@' && data[1] != '\0')
+            {   
+                buf = xmalloc_open_read_close(data+1, &len);
+            }
+
+            if (buf)
+                data = buf;
+            else
+                len = strlen(data);
+
+            SENDFMT(sfp,
+                "Content-Type: application/x-www-form-urlencoded\r\n"
+                "Content-Length: %u\r\n"
+                "\r\n"
+                "%s",
+                (int) len, data
+            );
+
+            if (buf) free(buf);
 		} else
 #endif
 		{
